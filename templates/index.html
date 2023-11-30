@@ -15,9 +15,9 @@
         <!-- Download Button -->
         <a href="{{ url_for('download_data') }}" class="btn btn-success mb-3">Download Data as CSV</a>
         <!-- Scrollable table container -->
-        <div class="table-container">
+        <div class="table-container" style="max-height: 300px; overflow-y: auto;">
             {% if data %}
-                <table class="table table-hover">
+                <table class="table table-hover" style="width: 80%;">
                     <thead class="thead-dark">
                         <tr>
                             <!-- Table headers -->
