@@ -4,17 +4,34 @@ import pandas as pd
 import os
 import shutil
 from kaggle.api.kaggle_api_extended import KaggleApi
-
+import base64
+from io import BytesIO
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 app = Flask(__name__)
 
+from flask import render_template
+from flask_mail import Mail, Message
+
+mail = Mail(app)
+
+@app.errorhandler(500)
+def internal_error(error):
+    # Send an email to your support email with the error details
+    msg = Message('Internal Server Error', sender='cmcarp05@louisville.edu', recipients=['ccarpenter0527@gmail.com'])
+    msg.body = str(error)
+    mail.send(msg)
+    return render_template('500.html'), 500
+
 from flask import Response
 
-# ... rest of your Flask app code ...
 
 @app.route('/download-data')
 def download_data():
-    fuel_data = get_csv_from_kaggle()  # Make sure this is the same function you use to get the DataFrame
+    fuel_data = get_csv_from_kaggle() 
     if fuel_data is not None:
         csv = fuel_data.to_csv(index=False)  # Convert DataFrame to CSV string
         return Response(
@@ -104,7 +121,6 @@ def get_csv_from_kaggle():
     # Download dataset files
     api.dataset_download_files(dataset_name, path=savepath, unzip=True)
 
-    # Assuming the file is named 'database.csv' and is located in the folder 'dataset-folder'
     filepath = os.path.join(savepath, 'database.csv')
 
     # Check if the file exists before reading
@@ -119,18 +135,185 @@ def get_csv_from_kaggle():
         print(f"File {filepath} not found. Check if the dataset contains 'database.csv'.")
         return None
 
+from flask import request
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
+    # Get the search query and filter criteria from the form
+    search_query = request.form.get('search_query')
+    filter_fuel_type1 = request.form.get('filter_fuel_type1')
+    filter_fuel_type2 = request.form.get('filter_fuel_type2')
+
+    # Get the data
+    fuel_data = get_csv_from_kaggle()
+
+    # If the data is successfully retrieved, convert it to records for display
+    if fuel_data is not None:
+        if search_query:
+            # Filter data based on the search query (modify this logic as needed)
+            fuel_data = fuel_data[fuel_data['Make'].str.contains(search_query, case=False) |
+                                  fuel_data['Model'].str.contains(search_query, case=False)]
+        
+        if filter_fuel_type1:
+            # Filter data by Fuel Type 1
+            fuel_data = fuel_data[fuel_data['Fuel Type 1'] == filter_fuel_type1]
+
+        if filter_fuel_type2:
+            # Filter data by Fuel Type 2
+            fuel_data = fuel_data[fuel_data['Fuel Type 2'] == filter_fuel_type2]
+
+        data_records = fuel_data.to_dict(orient='records')
+        return render_template('index.html', data=data_records, search_query=search_query)
+    else:
+        return render_template('error.html', message="Data could not be loaded.")
+
+@app.route('/page1')
+def page1():
     # Get the data
     fuel_data = get_csv_from_kaggle()
 
     # If the data is successfully retrieved, convert it to records for display
     if fuel_data is not None:
         data_records = fuel_data.to_dict(orient='records')
-        return render_template('/index.html', data=data_records)
+
+        # Create the chart
+        plt.figure(figsize=(8, 4))
+        sorted_data = fuel_data.groupby('Fuel Type 1')['Annual Fuel Cost (FT1)'].mean().sort_values(ascending=False)
+        sorted_data.plot(kind='bar', color='skyblue')
+        plt.title('Average Annual Fuel Cost (FT1) by Fuel Type 1')
+        plt.xlabel('Fuel Type 1', fontsize=11, fontweight='bold', labelpad=20)  # Set font size, make it bold, and adjust label position
+        plt.ylabel('Average Annual Fuel Cost', fontsize=11, fontweight='bold')  # Adjust label position for the y-axis
+        plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
+        plt.tight_layout()
+
+        # Save the plot to a BytesIO object
+        img = BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+
+        # Convert the image to base64 for embedding in HTML
+        img_str = base64.b64encode(img.read()).decode('utf-8')
+
+        # Pass the data and image to the template
+        return render_template('page1.html', data_records=data_records, img_str=img_str)
     else:
         return render_template('error.html', message="Data could not be loaded.")
+
+
+@app.route('/page2')
+def page2():
+    # Get the data
+    fuel_data = get_csv_from_kaggle()
+
+    # If the data is successfully retrieved, convert it to records for display
+    if fuel_data is not None:
+        # Create the chart for Fuel Type 2
+        plt.figure(figsize=(8, 4))
+        sorted_data_page2 = fuel_data.groupby('Fuel Type 2')['Annual Fuel Cost (FT2)'].mean().sort_values(ascending=False)
+        sorted_data_page2.plot(kind='bar', color='lightcoral')
+        plt.title('Average Annual Fuel Cost (FT2) by Fuel Type 2')
+        plt.xlabel('Fuel Type 2', fontsize=11, fontweight='bold', labelpad=20)
+        plt.ylabel('Average Annual Fuel Cost', fontsize=11, fontweight='bold')
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+
+        # Save the plot to a BytesIO object
+        img_page2 = BytesIO()
+        plt.savefig(img_page2, format='png')
+        img_page2.seek(0)
+
+        # Convert the image to base64 for embedding in HTML
+        img_str_page2 = base64.b64encode(img_page2.read()).decode('utf-8')
+
+        # Pass the image to the template
+        return render_template('page2.html', img_str_page2=img_str_page2)
+    else:
+        return render_template('error.html', message="Data could not be loaded.")
+
+
+@app.route('/page3')
+def page3():
+    # Get the data
+    fuel_data = get_csv_from_kaggle()
+
+    # If the data is successfully retrieved, convert it to records for display
+    if fuel_data is not None:
+        # Group by 'Make' and calculate the average annual fuel cost (FT1)
+        make_avg_fuel_cost = fuel_data.groupby('Make')['Annual Fuel Cost (FT1)'].mean()
+
+        # Select the top 5 makes with the lowest average annual fuel cost
+        top_5_low_cost_makes = make_avg_fuel_cost.nsmallest(5)
+
+        # Create bar chart for top 5 makes with lowest average annual fuel cost
+        plt.figure(figsize=(6, 4))
+
+        # Top 5 makes with lowest average annual fuel cost
+        plt.bar(top_5_low_cost_makes.index, top_5_low_cost_makes, color='lightblue')
+        plt.title('Top 5 Makes with Lowest Average Annual Fuel Cost (FT1)')
+        plt.xlabel('Make', fontsize=12, fontweight='bold', labelpad=20)
+        plt.ylabel('Average Annual Fuel Cost', fontsize=12, fontweight='bold')
+
+        # Set tick positions and labels
+        plt.xticks(range(len(top_5_low_cost_makes)), top_5_low_cost_makes.index, rotation=45, ha='right')
+
+        # Save the plot to a BytesIO object
+        img_low_cost = BytesIO()
+        plt.savefig(img_low_cost, format='png')
+        img_low_cost.seek(0)
+
+        # Convert the image to base64 for embedding in HTML
+        img_str_low_cost = base64.b64encode(img_low_cost.read()).decode('utf-8')
+
+        # Close the current figure to release resources
+        plt.close()
+
+        # Pass the data and image to the template
+        return render_template('page3.html', img_str_low_cost=img_str_low_cost)
+    else:
+        return render_template('error.html', message="Data could not be loaded.")
+
+@app.route('/page4')
+def page4():
+    # Get the data
+    fuel_data = get_csv_from_kaggle()
+
+    # If the data is successfully retrieved, convert it to records for display
+    if fuel_data is not None:
+        # Group by 'Make' and calculate the average annual fuel cost (FT2)
+        make_avg_fuel_cost_ft2 = fuel_data.groupby('Make')['Annual Fuel Cost (FT2)'].mean()
+
+        # Select the top 5 makes with the lowest average annual fuel cost for Fuel Type 2
+        top_5_low_cost_makes_ft2 = make_avg_fuel_cost_ft2.nsmallest(5)
+
+        # Create bar chart for top 5 makes with lowest average annual fuel cost for Fuel Type 2
+        plt.figure(figsize=(6, 4))
+
+        # Top 5 makes with lowest average annual fuel cost for Fuel Type 2
+        plt.bar(top_5_low_cost_makes_ft2.index, top_5_low_cost_makes_ft2, color='lightgreen')
+        plt.title('Top 5 Makes with Lowest Average Annual Fuel Cost (FT2)')
+        plt.xlabel('Make', fontsize=12, fontweight='bold', labelpad=20)
+        plt.ylabel('Average Annual Fuel Cost (FT2)', fontsize=12, fontweight='bold')
+
+        # Set tick positions and labels
+        plt.xticks(range(len(top_5_low_cost_makes_ft2)), top_5_low_cost_makes_ft2.index, rotation=45, ha='right')
+
+        # Save the plot to a BytesIO object
+        img_low_cost_ft2 = BytesIO()
+        plt.savefig(img_low_cost_ft2, format='png')
+        img_low_cost_ft2.seek(0)
+
+        # Convert the image to base64 for embedding in HTML
+        img_str_low_cost_ft2 = base64.b64encode(img_low_cost_ft2.read()).decode('utf-8')
+
+        # Close the current figure to release resources
+        plt.close()
+
+        # Pass the data and image to the template
+        return render_template('page4.html', img_str_low_cost_ft2=img_str_low_cost_ft2)
+    else:
+        return render_template('error.html', message="Data could not be loaded.")
+
+
 
 
 if __name__ == '__main__':
@@ -149,4 +332,3 @@ if __name__ == '__main__':
         app.run(debug=True)
     if not debug:
         app.run()
-

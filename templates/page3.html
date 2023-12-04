@@ -1,0 +1,62 @@
+<!-- page3.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page 3</title>
+    <style>
+        body {
+            background-color: rgb(138, 235, 159);
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-left: 40px;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 35px;
+            left: 20px;
+            padding: 4px 6px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        p {
+            text-indent: 20px;
+            font-size: 1.0rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        img {
+            display: block;
+            margin: 30px auto 0; 
+            width: 50%;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Make's with the lowest average annual fuel costs for FT1 </h1>
+    <p>This graph represents the car makes that have the lowest average annual fuel costs for Fuel Type 1. If you have a car that uses FT1, this graph is a key source of information to allow you to make a better decision. Purchasing a vehicle is a big decision and it's important to consider all factors.</p>
+    <!-- content for Page 3 -->
+    <img src="data:image/png;base64,{{ img_str_low_cost }}" alt="Bar Graph" style="display: block; margin-left: auto; margin-right: auto; width: 50%;"/>
+    <!-- Button to go back to the main page -->
+    <p></p>
+    <a href="/" class="back-btn">Back to Main Page</a>
+</body>
+</html>

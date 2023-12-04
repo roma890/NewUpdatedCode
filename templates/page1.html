@@ -1,0 +1,62 @@
+<!-- page1.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page 1</title>
+    <style>
+        body {
+            background-color: rgb(138, 235, 159);
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            margin-left: 40px;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 35px;
+            left: 20px;
+            padding: 4px 6px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        p {
+            text-indent: 20px;
+            font-size: 1.0rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        img {
+            display: block;
+            margin: 30px auto 0; 
+            width: 50%;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Comparing Fuel Prices for FT1</h1>
+    <p>Explore the average annual fuel costs for different fuel types across various vehicles. The horizontal axis represents Fuel Type 1, including Premium Gasoline, Midgrade Gasoline, Natural Gas, Regular Gasoline, Diesel, and Electricity. The vertical axis represents the Average Annual Fuel Cost (in dollars), ranging from 0 to 2000+. Use this graph to compare the cost efficiency of different fuel types.</p>
+    <!-- content for Page 1  -->
+    <img src="data:image/png;base64,{{ img_str }}" alt="Bar Graph"/>
+    <!-- Button to go back to the main page -->
+    <p>From the graph, we can see that Premium and Midrange gasoline have the highest average annual fuel costs for FT1 with an average annual fuel cost above 2500. Electric by far has the lowest average annual fuel costs at slightly over 500 and would be an effective choice among those looking to have a low average annual fuel cost.</p>
+    <a href="/" class="back-btn">Back to Main Page</a>
+</body>
+</html>
